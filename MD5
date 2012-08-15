@@ -1,4 +1,4 @@
-c311480170a1b2142109d3c5064e15d7 *DESCRIPTION
+d77ff6edba3707205ec8141694c6ef4c *DESCRIPTION
 0def7ebffbf516111b22558ec1d43301 *NAMESPACE
 129059882f3077e9f0626346ecf6c174 *R/functions.R
 9aec5727c4c3f15d4c0efb2b0c392ded *man/Estable.Rd
@@ -8,4 +8,4 @@ a476272d532e6efae47f3500a266c754 *man/FMstable.Rd
 2fc9bf66095a245ffaa4832aba1e8b25 *man/moments.Rd
 ccf3185d43e2e18a0f3d2c664d82e802 *man/optionValues.Rd
 409a1548d983fa64ed3c169d10e5bf49 *man/stableParameters.Rd
-5ce80961fa623d1cdee9514ea5f5795a *src/FMStable.c
+1002e881810760cef7586e84115c1c36 *src/FMStable.c

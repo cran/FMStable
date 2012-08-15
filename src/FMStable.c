@@ -3,12 +3,6 @@
 #include <R.h>
 
 	/* Standard defines */
-#ifdef __unix__
-#define EXPORT void
-#else
-#define EXPORT __declspec(dllexport)void
-#endif
-#define MAKEARRAY(size,type) ((type *)malloc((size)*sizeof(type)))
 #define MIN(a,b) ((a)<(b)? (a):(b))
 #define MAX(a,b) ((a)<(b)? (b):(a))
 
@@ -5224,7 +5218,7 @@ void tailslogMSS(int n,double x[],double d[],double F[],double cF[],
 static const double neglarge=-1.7E308;
 int i;
 double *nlogx;
-nlogx=MAKEARRAY(n,double);
+nlogx = (double *)R_alloc(n, sizeof(double));
 
 for (i=0; i<n; i++)  nlogx[i]=-log(x[i]); 
 tailsMSS(n,nlogx,d,logd,cF,logcF,F,logF,alpha,oneminusalpha, twominusalpha,
@@ -5241,11 +5235,9 @@ for (i=0; i<n; i++) if(x[i] > 0){
 	cF[i] = 1;
 	logcF[i] = 0;
 }
-
-free(nlogx);
 }
 /*====================================================================== */
-EXPORT RtailsMSS(double *Ralpha,double *Roneminusalpha,
+void RtailsMSS(double *Ralpha,double *Roneminusalpha,
 	double *Rtwominusalpha,double *Rlocation,double *Rlogscale,
 	double *Rn,double *x,double *d,double *logd,double *F,
 	double *logF,double *cF,double *logcF)
@@ -5264,7 +5256,7 @@ tailsMSS(n,x,d,logd,F,logF,cF,logcF,alpha,oneminusalpha, twominusalpha,
 	location,logscale);
 }
 /*====================================================================== */
-EXPORT RtailslogMSS(double *Ralpha,double *Roneminusalpha,
+void RtailslogMSS(double *Ralpha,double *Roneminusalpha,
 	double *Rtwominusalpha,double *Rlocation,double *Rlogscale,
 	double *Rn,double *x,double *d, double *logd,double *F,double *logF,
 	double *cF,double *logcF)

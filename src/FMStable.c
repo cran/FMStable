@@ -1,5 +1,4 @@
 #include <math.h>
-#include <malloc.h>
 #include <R.h>
 
 	/* Standard defines */
@@ -4842,7 +4841,7 @@ static double tabled7 [ 2400 ]= {
 static void setalpha(double alpha, double oneminusalpha, double twominusalpha)
 {
 /* functions setalpha might be made faster by initializing arrays */
-double sinangle;
+double sinangle, sinhalfangle;
 int i;
 
 /* If alpha is not in permissible range then print message but do nothing */
@@ -4932,21 +4931,22 @@ else{
 		C3=oneminusalpha/sinangle;
 		C4=(2*pow(sin(.25*pi*oneminusalpha),2)-oneminusalpha)/sinangle;
 		midpoint=C1*expm1(C2*log(C3/ximid))+C4;
-		nu=pow(fabs(1-alpha),(-1/alpha));
-		eta=1/tan(angle);
-/* Lower limit where xi=10**30; take density to be zero below here */
+		nu=pow(fabs(oneminusalpha),(-1/alpha));
+		if(alphalarge) eta=-tan(hpi*twominusalpha);
+		else eta=1/tan(angle);
+	/* Lower limit where xi=10**30; take density to be zero below here */
 		xlowlimit=C1*expm1(C2*log(C3/1.E30))+C4;
 
-/* Note: when nu is near 1, precision would be improved by avoiding the */
-/*	subtraction implicit in use of logscalef and Clogd */
-
-		logscalef=log(fabs(sinangle))/alpha;
+		if(alphalarge){
+			sinhalfangle=sin(.25*pi*twominusalpha);
+			logscalef=log1p(-2*sinhalfangle*sinhalfangle)/alpha;
+		} else logscalef=log(fabs(sinangle))/alpha;
 	}
 	sa2=twominusalpha/(2*alpha);
 	Clogd=log(nu/sqrt(2*pi*alpha));
 	if(alpha < 1)sinangle=sin(hpi*alpha); else
 		sinangle=sin(hpi*twominusalpha);
-	Calpha_M=2*exp(LogGamma(alpha))*sinangle/pi;
+	Calpha_M=exp(LogGamma(alpha))*sinangle/pi;
 
 	interpolate_over_alpha(nx1,ny1,Vy1,alphastar,
 		tablef1,tabled1,f1,d1,ydenom1);
@@ -5120,7 +5120,7 @@ else if(alphalarge){
 		} while(fabs(dy)>1.e-10*y);
 		t=pow((y/19.5),(-alpha));
 		interpolate(t,&ffound,&dfound,nx5,Vx5,f5,d5,xdenom5);
-		logapprox=log(Calpha_M)-alpha*log(y);
+		logapprox=log(2*Calpha_M)-alpha*log(y);
 		logcF[i]=logapprox+log(ffound);
 		cF[i]=exp(logcF[i]);
 		F[i]=1.-cF[i];
@@ -5196,7 +5196,7 @@ else{
 		}
 		t=pow((y/5.),(-alpha));
 		interpolate(t,&ffound,&dfound,nx6,Vx6,f6,d6,xdenom6);
-		logapprox=log(Calpha_M)-alpha*log(y);
+		logapprox=log(2*Calpha_M)-alpha*log(y);
 		logcF[i]=logapprox+log(ffound);
 		cF[i]=exp(logcF[i]);
 		F[i]=1.-cF[i];

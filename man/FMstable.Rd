@@ -82,8 +82,8 @@ Option prices can be found using \code{\link{callFMstable}} and
 \examples{
 tailsFMstable(1:10, setMomentsFMstable(3, 1.5, alpha=1.7))
 
-x <- c(0, 1.e-5, .001, .01, .03, seq(from=.1, to=4.5, length=100))
-plot(x, pFMstable(x, setMomentsFMstable(1, 1.5, 2)), type="l",
+x <- c(-1, 0, 1.e-5, .001, .01, .03, seq(from=.1, to=4.5, length=100))
+plot(x, pFMstable(x, setMomentsFMstable(1, 1.5, 2)), type="l" ,xlim=c(0, 4.3),
   ylim=c(0,1), ylab="Distribution function")
 for (alpha in c(.03, 1:19/10)) lines(x, pFMstable(x,
   setMomentsFMstable(1, 1.5, alpha)), col=2)

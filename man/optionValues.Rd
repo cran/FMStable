@@ -26,6 +26,14 @@ for finding option values.}
 When comparing option values based on finite moment log stable
 distributions with ones based on log normal distributions, remember that
 the interest rate and holding cost have been ignored here.
+
+Rather than using functions \code{putFMstable} and \code{callFMstable}
+for options that are extremely in-the-money (i.e. the options are almost
+certain to be exercised), the values of such options can be computed
+more accurately by first computing the value of the out-of-the-money
+option and then using the relationship \code{spot} + \code{put} =
+\code{call} + \code{strike}.  This is done by function
+\code{optionsFMstable}.
 }
 
 \value{

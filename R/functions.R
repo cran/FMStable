@@ -46,11 +46,73 @@ setMomentsFMstable <- function(mean=1, sd=1,
     location <- logscale*2*scale/pi - log(mean)
   } else{
     # Case when alpha exceeds 0.5 but is not precisely 1
-    s <- sin(oneminusalpha*.5*pi)
+    s <- if(alpha < 1.5) sin(oneminusalpha*.5*pi) else -cos(twominusalpha*.5*pi)
     sinalpha <- if(alpha < 1) sin(alpha*.5*pi) else sin(twominusalpha*.5*pi)
     scale.to.alpha <- -.5*logmr*s/expm1(-oneminusalpha*log(2))
     logscale <- log(scale.to.alpha)/alpha
-      scale <- exp(logscale)
+    scale <- exp(logscale)
+    location <- (scale*sinalpha - scale.to.alpha)/s - log(mean)
+  }
+
+  res <- list(alpha=alpha, oneminusalpha=oneminusalpha,
+    twominusalpha=twominusalpha, location=location, logscale=logscale,
+    created.by="setMomentsFMstable")
+  class(res) <- "stableParameters"
+  return(res)
+}
+# Find parameters corresponding to mean and sd, given alpha
+setMomentsFMstable <- function(mean=1, sd=1,
+    alpha, oneminusalpha, twominusalpha){
+  if(!missing(alpha)){
+    # Case where alpha is specified
+    if(length(alpha) != 1) stop(
+      "setMomentsFMstable: alpha must be of length 1")
+    if(!missing(oneminusalpha) || !missing(twominusalpha)) stop(
+      "Only specify one of alpha, oneminusalpha, twominusalpha")
+    oneminusalpha <- 1 - alpha
+    twominusalpha <- 2 - alpha
+  } else if(!missing(oneminusalpha)){
+    # Case where oneminusalpha is specified
+    if(length(oneminusalpha) != 1) stop(
+      "setMomentsFMstable: oneminusalpha must be of length 1")
+    if(!missing(twominusalpha)) stop(
+      "Only specify one of alpha, oneminusalpha, twominusalpha")
+    alpha <- 1 - oneminusalpha
+    twominusalpha <- 1 + oneminusalpha
+  } else {
+    if(missing(twominusalpha))stop(
+      "Specify one of alpha, oneminusalpha, twominusalpha")
+    # Case where twominusalpha is specified
+    if(length(twominusalpha) != 1) stop(
+      "setMomentsFMstable: twominusalpha must be of length 1")
+    alpha <- 2 - twominusalpha
+    oneminusalpha <- twominusalpha - 1
+  }
+  if(length(mean) != 1) stop("setMomentsFMstable: mean must be of length 1")
+  if(length(sd) != 1) stop("setMomentsFMstable: sd must be of length 1")
+  if(alpha <= 0 || twominusalpha < 0) stop(
+    "setMomentsFMstable: alpha must be >= 0 and <= 2")
+
+  cv <- sd/mean
+  logmr <- log1p(cv*cv)
+
+  # Case when alpha is less than 0.5 
+  if(alpha < 0.5){
+    scale.to.alpha <- logmr/(2- 2^alpha)
+    logscale <- log(scale.to.alpha)/alpha
+    location <- -log(mean) - scale.to.alpha
+  } else if(oneminusalpha == 0){
+    # Case when alpha is precisely 1
+    scale <- pi*logmr/(4*log(2))
+    logscale <- log(scale)
+    location <- logscale*2*scale/pi - log(mean)
+  } else{
+    # Case when alpha exceeds 0.5 but is not precisely 1
+    s <- if(alpha < 1.5) sin(oneminusalpha*.5*pi) else -cos(twominusalpha*.5*pi)
+    sinalpha <- if(alpha < 1) sin(alpha*.5*pi) else sin(twominusalpha*.5*pi)
+    scale.to.alpha <- -.5*logmr*s/expm1(-oneminusalpha*log(2))
+    logscale <- log(scale.to.alpha)/alpha
+    scale <- exp(logscale)
     location <- (scale*sinalpha - scale.to.alpha)/s - log(mean)
   }
 
@@ -80,8 +142,12 @@ print.stableParameters <- function(x, ...){
   cat(paste(" ******** Stable parameter object created by", x$created.by))
   cat(paste("\n ** Alpha =", x$alpha,"  location =", x$location,
     "  logscale =", x$logscale))
-  if(abs(x$oneminusalpha) < .1) cat(paste("\n ** oneminusalpha =",x$oneminusalpha))
-  if(abs(x$twominusalpha) < .1) cat(paste("\n ** twominusalpha =",x$twominusalpha))
+  if(abs(x$oneminusalpha) < .1) cat(paste("\n ** oneminusalpha =",
+    x$oneminusalpha))
+  if(abs(x$twominusalpha) < .1) cat(paste("\n ** twominusalpha =",
+    x$twominusalpha))
+  if(max(abs(1:2 -x$alpha - c(x$oneminusalpha, x$twominusalpha))) >
+    .Machine$double.eps) cat(paste("\n Versions of alpha not consistent"))
   m <- moments(1:2, x)
   cat(paste("\n ** Logstable distribution has mean=", m[1],
     "  sd=", sqrt(m[2] - m[1]^2),"\n ********\n"))
@@ -185,6 +251,13 @@ fitGivenQuantile <- function(mean, sd, prob, value, tol=1.e-10){
     alpha.given.quantile: prob must be > 0 and < 1")
   if(value <= 0) stop("alpha.given.quantile: value must be > 0")
   if(mean <= 0) stop("alpha.given.quantile: mean must be > 0")
+  # Check whether alpha=0 distribution would have sd larger than specified
+  q <- 1-prob
+  A <- mean/q
+  minvar <- prob*mean*mean + q*(A-mean)^2
+  if(sd*sd <= minvar) stop(paste("fitGivenQuantile: Quantile cannot be fitted.",
+    "\nDistribution with probability", prob, "at zero and", q, "at", A,
+    "\nhas standard deviation", sqrt(minvar), "which exceeds specified sd."))
   cv <- sd/mean
   Pdiscrepancy <- function(x) pFMstable(value/mean,
     setMomentsFMstable(mean=1, sd=cv, twominusalpha=x)) - prob
@@ -201,8 +274,6 @@ matchQuartiles <- function(quartiles, alpha, oneminusalpha, twominusalpha,
       "setMomentsFMstable: alpha must be of length 1")
     if(!missing(oneminusalpha) || !missing(twominusalpha)) stop(
       "Only specify one of alpha, oneminusalpha, twominusalpha")
-    oneminusalpha <- 1 - alpha
-    twominusalpha <- 2 - alpha
     case <- 1
   } else if(!missing(oneminusalpha)){
     # Case where oneminusalpha is specified
@@ -210,8 +281,6 @@ matchQuartiles <- function(quartiles, alpha, oneminusalpha, twominusalpha,
       "setMomentsFMstable: oneminusalpha must be of length 1")
     if(!missing(twominusalpha)) stop(
       "Only specify one of alpha, oneminusalpha, twominusalpha")
-    alpha <- 1 - oneminusalpha
-    twominusalpha <- 1 + oneminusalpha
     case <- 2
   } else {
     if(missing(twominusalpha))stop(
@@ -219,45 +288,38 @@ matchQuartiles <- function(quartiles, alpha, oneminusalpha, twominusalpha,
     # Case where twominusalpha is specified
     if(length(twominusalpha) != 1) stop(
       "setMomentsFMstable: twominusalpha must be of length 1")
-    alpha <- 2 - twominusalpha
-    oneminusalpha <- twominusalpha - 1
     case <- 3
   }
   if(length(quartiles) != 2) stop(
     "matchQuartiles: quartiles must be of length 2")
   if(quartiles[1] <= 0 || quartiles[2] <= quartiles[1]) stop(
     "matchQuartiles: Require 0 < quartile[1] < quartile[2]")
+
   # First approximation to mean and sd
   av <- mean(quartiles)
   sd <- diff(quartiles)*.74
   switch(case, {
-    disc1 <- function(param) sum((pFMstable(quartiles,
-      setMomentsFMstable(param, sd, alpha)) - c(.25,.75))^2)
-    disc2 <- function(param) sum((pFMstable(quartiles,
-      setMomentsFMstable(av, param, alpha)) - c(.25,.75))^2)
+    disc <- function(param) sum((pFMstable(quartiles, setMomentsFMstable(
+      exp(param[1]), exp(param[2]), alpha=alpha)) - c(.25,.75))^2)
   },{
-    disc1 <- function(param) sum((pFMstable(quartiles,
-      setMomentsFMstable(param, sd, oneminusalpha)) - c(.25,.75))^2)
-    disc2 <- function(param) sum((pFMstable(quartiles,
-      setMomentsFMstable(av, param, oneminusalpha)) - c(.25,.75))^2)
+    disc <- function(param) sum((pFMstable(quartiles, setMomentsFMstable(
+      exp(param[1]), exp(param[2]), oneminusalpha=oneminusalpha)) -
+      c(.25,.75))^2)
   },{
-    disc1 <- function(param) sum((pFMstable(quartiles,
-      setMomentsFMstable(param, sd, twominusalpha)) - c(.25,.75))^2)
-    disc2 <- function(param) sum((pFMstable(quartiles,
-      setMomentsFMstable(av, param, twominusalpha)) - c(.25,.75))^2)
+    disc <- function(param) sum((pFMstable(quartiles, setMomentsFMstable(
+      exp(param[1]), exp(param[2]), twominusalpha=twominusalpha)) -
+      c(.25,.75))^2)
   })
-  repeat {
-    newsd <- optimize(disc2, lower=sd*.5, upper=sd*2, tol=tol)$minimum
-    newav <- optimize(disc1, lower=av-newsd, upper=av+newsd, tol=tol)$minimum
-    rel.change <- abs(sd/newsd - 1) + abs(av/newav - 1)
-    sd <- newsd
-    av <- newav
-    if(rel.change < tol) break
-  }
+
+  # Find mean and sd that give match to specified quartiles
+  opt <- optim(log(c(av, sd)), disc, control=list(reltol=tol*tol))
+  if(opt$convergence > 0) print("matchQuartiles: Poor convergence")
+  av <- exp(opt$par[1])
+  sd <- exp(opt$par[2])
   switch(case,
-    setMomentsFMstable(mean=av, sd, alpha),
-    setMomentsFMstable(mean=av, sd, oneminusalpha),
-    setMomentsFMstable(mean=av, sd, twominusalpha))
+    setMomentsFMstable(mean=av, sd, alpha=alpha),
+    setMomentsFMstable(mean=av, sd, oneminusalpha=oneminusalpha),
+    setMomentsFMstable(mean=av, sd, twominusalpha=twominusalpha))
 }
 
 # Find location and scale for convolution of n (not necessarily integral)
@@ -398,11 +460,11 @@ pFMstable.alpha0 <- function(x, mean=1, sd=1, lower.tail=TRUE){
   pA <- mean/A
   res <- double(length(x))
   if(lower.tail){
-    res[x >= 0] <- 1-pA
+    res[x > 0] <- 1-pA
     res[x >= A] <- 1
   } else {
     res[x < A] <- pA
-    res[x < 0] <- 1
+    res[x <= 0] <- 1
   }
   return(res)
 }
@@ -423,9 +485,9 @@ putFMstable <- function(strike, paramObj, rel.tol=1.e-10){
     upto <- s
   }
   lastput <- result[o[length(strike)]]
-  if(lastput+moments(1, paramObj)-s < .01 * lastput) cat(paste(
-    "putFMstable: For large strikes, use callFMstable",
-    "and the relationship\nput = call + strike - mean\n"))
+  #if(lastput+moments(1, paramObj)-s < .01 * lastput) cat(paste(
+  #  "putFMstable: For large strikes, consider using callFMstable",
+  #  "and the relationship\nput = call + strike - mean\n"))
   result
 }
 
@@ -440,8 +502,8 @@ callFMstable <- function(strike, paramObj, rel.tol=1.e-10){
 
   # Find where right tail is rel.tol^2 smaller than for largest strike
   pright <- pFMstable(strike[o[1]], paramObj, lower.tail=FALSE)
-  if(pright == 0) upto <- strike[o[1]] else upto <-
-    qFMstable(min(.5, pright)*rel.tol^2, paramObj, lower.tail=FALSE)
+  if(pright <= 0) upto <- strike[o[1]] else upto <- qFMstable(
+    max(min(.5, pright)*rel.tol^2, 1.e-300), paramObj, lower.tail=FALSE)
 
   # Work through strikes in descending order
   for (i in 1:length(strike)){
@@ -451,9 +513,9 @@ callFMstable <- function(strike, paramObj, rel.tol=1.e-10){
     upto <- s
   }
   lastcall <- result[o[length(strike)]]
-  if(lastcall-moments(1, paramObj)+s < .01 * lastcall) cat(paste(
-    "callFMstable: For small strikes, use putFMstable",
-    "and the relationship\ncall = put + mean - strike\n"))
+  #if(lastcall-moments(1, paramObj)+s < .01 * lastcall) cat(paste(
+  #  "callFMstable: For small strikes, consider using putFMstable",
+  #  "and the relationship\ncall = put + mean - strike\n"))
   result
 }
 # Value of call and put options under finite moment logstable distribution
@@ -666,23 +728,23 @@ tailsGstable <- function(x, logabsx, alpha, oneminusalpha, twominusalpha,
     term1 <- l2 <- l3 <- rep(0, length(p))
     # Compute cos(arg2) as sine of one of
     #  theta+ALPHA*(theta-PHI0)+HPI and theta+ALPHA*(theta-PHI0)-HPI
-    first <- abs(pcarg2)<abs(ncarg2)
+    first <- abs(pcarg2) < abs(ncarg2)
     term1[first] <- sin(pcarg2[first])
     term1[!first] <- sin(-ncarg2[!first])
     # When arg1 is not near to unity, (say abs(arg1) > 1), 
     #  use sin(arg1)=1-2*sin(a)^2 where a is 0.5*(PI-arg1) or 0.5(arg1+PI)
-    first <- abs(pcarg1)<abs(ncarg1)
+    first <- abs(pcarg1) < abs(ncarg1)
     a <- ncarg1
     a[first] <- pcarg1[first]
     first <- abs(arg1) > 1
     l2[first] <- log1p(-2*sin(.5*a[first])^2)
     l2[!first] <- log(abs(sin(arg1[!first])))
     # When abs(theta) < 0.7, compute cos(theta) as 1-2*sin(0.5*theta)^5
-    #  otherwise use sin(b)where b is theta+HPI or theta-HPI
+    #  otherwise use sin(b) where b is theta+HPI or theta-HPI
     first <- abs(theta) < 0.7
-    secondtest <- abs(pctheta)<abs(nctheta)
-    second <- !first && secondtest
-    third <- !first && !secondtest
+    secondtest <- abs(pctheta) < abs(nctheta)
+    second <- !first & secondtest
+    third <- !first & !secondtest
     l3[first] <- log1p(-2*sin(.5*theta[first])^2)
     l3[second] <- log(sin(pctheta[second]))
     l3[third] <- log(sin(-nctheta[third]))
@@ -767,7 +829,7 @@ tailsGstable <- function(x, logabsx, alpha, oneminusalpha, twominusalpha,
   #  alpha<1, beta=1 & x<0; or alpha<1, beta=-1 & x>0
   if( x==0 || twominusalpha <= 0 || alpha <= 0 || oneminusalpha ==0 ||
     oneminusalpha > 0 && ((betaminus1==0 && x<0) || (betaplus1==0 && x>0))){
-    print("Check parameters input to function tailprob")}
+    print("Check parameters input to function tailsGstable")}
   phi0 <- -HPI*beta*k/alpha
   possibleWlimit <- abs(oneminusalpha)*abs(x/alpha)^(-alpha/oneminusalpha)
   if(oneminusalpha>0){  #Case when alpha<1
@@ -849,7 +911,7 @@ tailsGstable <- function(x, logabsx, alpha, oneminusalpha, twominusalpha,
     righttail <- contribution; lefttail <- 1-righttail}
 
   # If alpha<1 & lower.tail & singleregion then swap tails around
-  swap <- if(oneminusalpha<0){FALSE}else{lower.tail && singleregion}
+  swap <- if(oneminusalpha < 0) {FALSE} else {lower.tail && singleregion}
   if(swap){temp <- lefttail; lefttail <- righttail; righttail <- temp}
   list(left.tail.prob=lefttail, right.tail.prob=righttail, 
     est.error=result$abs.error, message=result$message)
@@ -925,7 +987,8 @@ standardStableQuantile <- function(logp, logq, obj, browse=FALSE){
       z <- -(1+log(.5*pi*xi))/(.5*pi)
     } else if(obj$alpha < 1.9){ # i.e. not near alpha==2
       ang <- .5*pi*obj$oneminusalpha
-      z <- expm1(  log(obj$alpha/cos(ang))+
+      cosa <- if(obj$alpha < 1.5) cos(ang) else sin(.5*pi*obj$twominusalpha)
+      z <- expm1(  log(obj$alpha/cosa)+
         (obj$oneminusalpha/obj$alpha)*log(obj$oneminusalpha/
         (xi* sin(ang)))  )/tan(ang)
     } else  {	#i.e. when alpha is near 2

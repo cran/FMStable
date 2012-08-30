@@ -62,7 +62,7 @@ simulating stable random variables. Journal of the American
 Statistical Association, 71, 340--344.
 }
 
-\seealso{i
+\seealso{
 If \eqn{x} has an extremal stable distribution then
 \eqn{\exp(-x)}{exp(-x)} has a finite moment log stable distribution.
 The left hand tail probability computed using \code{pEstable} should be
@@ -71,6 +71,9 @@ the same as the coresponding right hand tail probability computed using
 
 Aspects of extremal stable distributions may also be computed (though
 more slowly) using \code{\link{tailsGstable}} with \code{beta}=1.
+
+Functions for generation of random variables having stable distributions
+are available in package \code{stabledist}.
 }
 
 \examples{
@@ -99,7 +102,7 @@ result <- qEstable(p, obj)
 pEstable(result, obj) - p
 
 # Plot to illustrate continuity near alpha=1
-y <- seq(from=-36, to=0, length=100)
+y <- seq(from=-36, to=0, length=30)
 logprob <- -exp(-y)
 plot(0, 0, type="n", xlim=c(-25,0), ylim=c(-35, -1),
   xlab="x (M parametrization)", ylab="-log(-log(distribution function))")

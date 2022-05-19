@@ -1,4 +1,4 @@
-useDynLib(FMStable)
+useDynLib(FMStable, .registration = TRUE)
 
 export(setParam, setMomentsFMstable, print.stableParameters,
 	tailsEstable, dEstable, pEstable, qEstable, tailsFMstable, dFMstable,
@@ -6,3 +6,4 @@ export(setParam, setMomentsFMstable, print.stableParameters,
 	matchQuartiles, iidcombine, moments, putFMstable, callFMstable,
 	optionsFMstable, BSOptionValue, ImpliedVol, lnorm.param, tailsGstable)
 S3method(print, stableParameters)
+importFrom("stats", "integrate", "optim", "pnorm", "qnorm", "uniroot")

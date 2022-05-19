@@ -161,7 +161,7 @@ bigAsInf <- function(x){
 }
 
 tailsEstable <- function(x, stableParamObj){
-  if(class(stableParamObj) != "stableParameters")stop(paste("tailsEstable:",
+  if(!inherits(stableParamObj, "stableParameters")) stop(paste("tailsEstable:",
     "Parameter stableParamObj must be of class stableParameters"))
   storage.mode(x) <- "double"
   n <- as.double(length(x))
@@ -179,7 +179,7 @@ tailsEstable <- function(x, stableParamObj){
 #  maximally skew stable distribution, find density,
 #  distribution function, and right tail probability.
 tailsFMstable <- function(x, stableParamObj){
-  if(class(stableParamObj) != "stableParameters")stop(paste("tailsFMstable:",
+  if(!inherits(stableParamObj, "stableParameters")) stop(paste("tailsFMstable:",
     "Parameter stableParamObj must be of class stableParameters"))
   storage.mode(x) <- "double"
   # Send finite positive x values to C function
@@ -327,7 +327,7 @@ matchQuartiles <- function(quartiles, alpha, oneminusalpha, twominusalpha,
 # New moment generating function is original to power n
 iidcombine <- function(n, stableParamObj){
   if(length(n) != 1) stop("iidcombine: n must be of length 1")
-  if(class(stableParamObj) != "stableParameters") stop(paste("iidcombine:",
+  if(!inherits(stableParamObj, "stableParameters")) stop(paste("iidcombine:",
     "Parameter stableParamObj must be of class stableParameters"))
   if(n <=0) stop("iidcombine: n must be > 0")
 
@@ -425,7 +425,7 @@ setParam <- function(alpha, oneminusalpha, twominusalpha,
 }
 
 moments <- function(powers, stableParamObj, log=FALSE){
-  if(class(stableParamObj) != "stableParameters") stop(paste("moments:",
+  if(!inherits(stableParamObj, "stableParameters")) stop(paste("moments:",
     "Parameter stableParamObj must be of class stableParameters"))
   if(any(powers <= 0)) stop("moments: Must have powers > 0")
   logpowers <- log(powers)
@@ -1062,7 +1062,7 @@ standardStableQuantile <- function(logp, logq, obj, browse=FALSE){
 # Quantile-finding using R function standardStableQuantile
 # Find quantiles of a stable distribution
 qEstable <- function(p, stableParamObj, log=FALSE, lower.tail=TRUE){
-  if(class(stableParamObj) != "stableParameters")stop(paste("qEstable:",
+  if(!inherits(stableParamObj, "stableParameters")) stop(paste("qEstable:",
     "Parameter stableParamObj must be of class stableParameters"))
   if(!all(is.finite(p))) stop("qEstable: Components of p must all be finite")
   if(log){
@@ -1093,7 +1093,7 @@ qEstable <- function(p, stableParamObj, log=FALSE, lower.tail=TRUE){
 # Find quantiles of a log stable distribution
 qFMstable <- function(p, stableParamObj, lower.tail=TRUE){
   if(!all(is.finite(p))) stop("qFMstable: Components of p must all be finite")
-  if(class(stableParamObj) != "stableParameters")stop(paste("qFMstable:",
+  if(!inherits(stableParamObj, "stableParameters")) stop(paste("qFMstable:",
     "Parameter stableParamObj must be of class stableParameters"))
   return(exp(-qEstable(p, stableParamObj, lower.tail=!lower.tail, log=FALSE)))
 }

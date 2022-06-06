@@ -2,8 +2,14 @@
 #include <R_ext/Rdynload.h>
 
 /* .C calls */
-extern void RtailslogMSS(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void RtailsMSS(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void RtailslogMSS(double *Ralpha,double *Roneminusalpha,
+	double *Rtwominusalpha,double *Rlocation,double *Rlogscale,
+	double *Rn,double *x,double *d, double *logd,double *F,double *logF,
+	double *cF,double *logcF);
+extern void RtailsMSS(double *Ralpha,double *Roneminusalpha,
+	double *Rtwominusalpha,double *Rlocation,double *Rlogscale,
+	double *Rn,double *x,double *d,double *logd,double *F,
+	double *logF,double *cF,double *logcF);
 
 static const R_CMethodDef CEntries[] = {
     {"RtailslogMSS", (DL_FUNC) &RtailslogMSS, 14},

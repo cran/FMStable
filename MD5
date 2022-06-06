@@ -1,4 +1,4 @@
-a31e62bc8e43b4c283e3c91f2aa07f51 *DESCRIPTION
+14212a47a334a277922b0371d9b44cdd *DESCRIPTION
 1c31b9fe747474c7099203496deb842e *NAMESPACE
 4c2b54e4fe41adca0e102eb80bbcbc68 *R/functions.R
 8224647aea53577f45a76a7f8383f44c *inst/doc/paper5.pdf
@@ -10,4 +10,4 @@ c0737f815c18bc2cb21213e4f3d043ac *man/FMstable.Rd
 b3efef726e35634265ba751e9b10628d *man/optionValues.Rd
 409a1548d983fa64ed3c169d10e5bf49 *man/stableParameters.Rd
 0d62a216ee062eb756ed721131220446 *src/FMStable.c
-83cbda0ad18e6158237f9e209ed44d98 *src/init.c
+1b69c36808147827c58b6b376c82e91c *src/init.c
